@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>沪宁线 · 博译 & 贝贝的双城记</title>
+    <style>
+        /* ===== Reset & Base ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'PingFang SC', 'Noto Sans SC', -apple-system, sans-serif;
+            background: #0f0a1a;
+            color: #f0e8f8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f0a1a; }
+        ::-webkit-scrollbar-thumb { background: #c084fc; border-radius: 3px; }
+
+        /* ===== Stars Background ===== */
+        #stars-canvas {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            position: relative; z-index: 1;
+            height: 100vh; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            background: linear-gradient(135deg, #e2b6ff, #f9a8d4, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .hero .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
+            color: #a78bfa;
+            letter-spacing: 0.5em;
+            font-weight: 300;
+        }
+        .hero .nicknames {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #c4b5fd;
+            letter-spacing: 0.1em;
+        }
+        .hero .nicknames span {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 999px;
+        }
+        .hero .nicknames .his {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        .hero .nicknames .hers {
+            background: rgba(244, 114, 182, 0.15);
+            border: 1px solid rgba(244, 114, 182, 0.3);
+        }
+        .hero .route-info {
+            margin-top: 2rem;
+            display: flex; gap: 2rem; align-items: center;
+            font-size: 1.1rem; color: #c4b5fd;
+        }
+        .hero .route-info .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block;
+        }
+        .hero .route-info .dot.shanghai { background: #fbbf24; }
+        .hero .route-info .dot.nanjing { background: #f472b6; }
+        .hero .route-info .line {
+            width: 60px; height: 2px;
+            background: linear-gradient(90deg, #fbbf24, #f472b6);
+            position: relative;
+        }
+        .hero .route-info .line::after {
+            content: '♥'; position: absolute;
+            left: 50%; top: -8px; transform: translateX(-50%);
+            color: #f472b6; font-size: 12px;
+        }
+        .scroll-hint {
+            position: absolute; bottom: 2rem;
+            color: #6d28d9; font-size: 0.85rem;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+
+        /* ===== Sections ===== */
+        section {
+            position: relative; z-index: 1;
+            padding: 5rem 1.5rem; max-width: 900px; margin: 0 auto;
+        }
+        section h2 {
+            font-size: 1.8rem; font-weight: 300;
+            text-align: center; margin-bottom: 3rem;
+            letter-spacing: 0.2em;
+            background: linear-gradient(90deg, #c084fc, #f9a8d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== Timeline ===== */
+        .timeline-container {
+            position: relative;
+        }
+        .timeline-container::before {
+            content: ''; position: absolute;
+            left: 50%; transform: translateX(-50%);
+            width: 2px; height: 100%;
+            background: linear-gradient(180deg, #c084fc, #f9a8d4, transparent);
+        }
+        .timeline-item {
+            display: flex; align-items: flex-start;
+            margin-bottom: 3rem; position: relative;
+        }
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+        .timeline-item .date {
+            width: 50%; text-align: center;
+            font-size: 0.9rem; color: #a78bfa;
+            padding-top: 0.5rem;
+        }
+        .timeline-item:nth-child(odd) .date { text-align: center; }
+        .timeline-item .content {
+            width: 50%; padding: 0 2rem;
+        }
+        .timeline-item .bubble {
+            background: rgba(192, 132, 252, 0.08);
+            border: 1px solid rgba(192, 132, 252, 0.2);
+            border-radius: 16px; padding: 1.2rem;
+            backdrop-filter: blur(10px);
+            font-size: 0.95rem; line-height: 1.7;
+            color: #e2d5f5;
+            transition: all 0.3s;
+        }
+        .timeline-item .bubble:hover {
+            background: rgba(192, 132, 252, 0.15);
+            border-color: rgba(192, 132, 252, 0.4);
+        }
+        .timeline-item .bubble .sender {
+            font-size: 0.8rem; color: #fbbf24; margin-bottom: 0.3rem;
+        }
+        .timeline-item .bubble .sender.her { color: #f472b6; }
+        .timeline-item .bubble .sender.his { color: #fbbf24; }
+        .timeline-dot {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #c084fc; border: 3px solid #0f0a1a;
+            top: 0.5rem; z-index: 2;
+        }
+
+        /* ===== Stats ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+        }
+        .stat-card {
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px solid rgba(192, 132, 252, 0.15);
+            border-radius: 16px; padding: 2rem 1rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(192,132,252,0.03) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .stat-card:hover::before { opacity: 1; }
+        .stat-card:hover {
+            background: rgba(192, 132, 252, 0.12);
+            transform: translateY(-3px);
+        }
+        .stat-card .number {
+            font-size: 2.5rem; font-weight: 300;
+            background: linear-gradient(135deg, #c084fc, #f9a8d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card .number.ready { color: #34d399; -webkit-text-fill-color: #34d399; }
+        .stat-card .label {
+            font-size: 0.85rem; color: #a78bfa; margin-top: 0.5rem;
+        }
+
+        /* ===== Gallery ===== */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .gallery-placeholder {
+            aspect-ratio: 1;
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px dashed rgba(192, 132, 252, 0.25);
+            border-radius: 12px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #6d28d9; font-size: 0.9rem;
+            text-align: center; padding: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .gallery-placeholder:hover {
+            background: rgba(192, 132, 252, 0.1);
+            border-color: rgba(192, 132, 252, 0.4);
+        }
+        .gallery-placeholder .big-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .gallery-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .gallery-item:hover img { transform: scale(1.05); }
+
+        /* ===== Weather ===== */
+        .weather-dual {
+            display: flex; gap: 1.5rem; justify-content: center;
+            flex-wrap: wrap;
+        }
+        .weather-city {
+            flex: 1; min-width: 200px;
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px solid rgba(192, 132, 252, 0.15);
+            border-radius: 16px; padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .weather-city:hover {
+            background: rgba(192, 132, 252, 0.1);
+            transform: translateY(-2px);
+        }
+        .weather-city .city-name {
+            font-size: 1.1rem; color: #c4b5fd; font-weight: 500;
+        }
+        .weather-city .temp {
+            font-size: 2rem; margin: 0.5rem 0;
+            background: linear-gradient(135deg, #c084fc, #f9a8d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .weather-city .desc {
+            font-size: 0.9rem; color: #a78bfa;
+        }
+        .weather-city .emoji-big {
+            font-size: 2.5rem; margin-bottom: 0.3rem;
+        }
+
+        /* ===== N minutes / special section ===== */
+        .special-message {
+            text-align: center;
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px solid rgba(192, 132, 252, 0.15);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        .special-message p {
+            font-size: 1.1rem; line-height: 2;
+            color: #e2d5f5;
+        }
+        .special-message .highlight {
+            color: #f9a8d4;
+            font-weight: 500;
+        }
+
+        /* ===== Message Board ===== */
+        .message-board {
+            text-align: center;
+        }
+        .message-board textarea {
+            width: 100%; max-width: 500px;
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px solid rgba(192, 132, 252, 0.2);
+            border-radius: 12px; padding: 1rem;
+            color: #f0e8f8; font-size: 0.95rem;
+            font-family: inherit; resize: vertical;
+            min-height: 100px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .message-board textarea:focus {
+            border-color: #c084fc;
+        }
+        .message-board textarea::placeholder {
+            color: #6d28d9;
+        }
+        .message-board button {
+            margin-top: 1rem;
+            background: linear-gradient(135deg, #7c3aed, #ec4899);
+            border: none; border-radius: 999px;
+            padding: 0.7rem 2.5rem;
+            color: white; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .message-board button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(192, 132, 252, 0.3);
+        }
+        .msg-entry {
+            background: rgba(192, 132, 252, 0.06);
+            border: 1px solid rgba(192, 132, 252, 0.12);
+            border-radius: 12px; padding: 0.8rem 1rem;
+            margin-bottom: 0.7rem; font-size: 0.9rem;
+            color: #e2d5f5; text-align: left;
+            transition: all 0.3s;
+        }
+        .msg-entry:hover {
+            background: rgba(192, 132, 252, 0.1);
+        }
+        .msg-entry .msg-time {
+            color: #6d28d9; font-size: 0.8rem;
+        }
+        .msg-entry .msg-author {
+            color: #fbbf24; font-size: 0.8rem;
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            position: relative; z-index: 1;
+            text-align: center; padding: 3rem 1.5rem 2rem;
+            color: #4c1d95; font-size: 0.85rem;
+        }
+        footer .heart { color: #f472b6; }
+
+        /* ===== Floating hearts ===== */
+        .floating-hearts {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+        .heart-particle {
+            position: absolute; bottom: -20px;
+            font-size: 14px; opacity: 0.15;
+            animation: float-up linear infinite;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* ===== Countdown ===== */
+        .countdown {
+            text-align: center; margin: 2rem 0;
+        }
+        .countdown .big-number {
+            font-size: 4rem; font-weight: 200;
+            background: linear-gradient(135deg, #c084fc, #f9a8d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        .countdown .unit {
+            font-size: 1rem; color: #a78bfa;
+        }
+        .countdown .label {
+            margin-top: 0.5rem; color: #6d28d9; font-size: 0.9rem;
+        }
+
+        /* ===== Empty state ===== */
+        .empty-hint {
+            text-align: center; color: #4c1d95;
+            padding: 3rem 0; font-size: 0.95rem;
+            line-height: 2;
+        }
+        .empty-hint .icon { font-size: 2rem; margin-bottom: 1rem; }
+
+        /* ===== Nav dots ===== */
+        .nav-dots {
+            position: fixed; right: 1.5rem; top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex; flex-direction: column; gap: 0.6rem;
+        }
+        .nav-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(192, 132, 252, 0.2);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-dot:hover,
+        .nav-dot.active {
+            background: #c084fc;
+            transform: scale(1.3);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 600px) {
+            .timeline-container::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: row !important;
+                padding-left: 40px;
+            }
+            .timeline-item .date,
+            .timeline-item .content { width: 100%; padding: 0 0 0 1rem; }
+            .timeline-item .date { text-align: left; margin-bottom: 0.3rem; }
+            .timeline-dot { left: 20px; }
+            section { padding: 3rem 1rem; }
+            .nav-dots { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Stars Background ===== -->
+    <canvas id="stars-canvas"></canvas>
+
+    <!-- ===== Floating Hearts ===== -->
+    <div class="floating-hearts" id="hearts"></div>
+
+    <!-- ===== Nav Dots ===== -->
+    <nav class="nav-dots" id="navDots">
+        <div class="nav-dot active" data-section="0"></div>
+        <div class="nav-dot" data-section="1"></div>
+        <div class="nav-dot" data-section="2"></div>
+        <div class="nav-dot" data-section="3"></div>
+        <div class="nav-dot" data-section="4"></div>
+        <div class="nav-dot" data-section="5"></div>
+        <div class="nav-dot" data-section="6"></div>
+    </nav>
+
+    <!-- ===== Hero ===== -->
+    <section class="hero" data-section-idx="0">
+        <h1>沪宁线</h1>
+        <p class="subtitle">双 城 记</p>
+        <div class="nicknames">
+            <span class="his">博译 🧸</span>
+            <span style="color:#6d28d9; padding:0 0.5rem;">&amp;</span>
+            <span class="hers">贝贝 🌸</span>
+        </div>
+        <div class="route-info">
+            <span><span class="dot shanghai"></span> 上海（华政）</span>
+            <span class="line"></span>
+            <span><span class="dot nanjing"></span> 南京（南信大）</span>
+        </div>
+        <p style="margin-top: 1.5rem; color: #6d28d9; font-size: 0.9rem;">
+            上海到南京，301公里 · 高铁1小时 · 思念24小时
+        </p>
+        <div class="scroll-hint">↓ 向下翻阅我们的故事</div>
+    </section>
+
+    <!-- ===== Countdown ===== -->
+    <section data-section-idx="1">
+        <h2>💕 在一起的第</h2>
+        <div class="countdown">
+            <div class="big-number" id="days-together">--</div>
+            <div class="unit">天</div>
+            <div class="label">301公里的距离，0毫米的心</div>
+        </div>
+        <div class="special-message">
+            <p>
+                从 <span class="highlight">2025年6月17日</span> 到今天，<br>
+                我们已经一起走过了 <span class="highlight" id="days-text">--</span> 个日夜。<br>
+                上海到南京的高铁只要1小时，<br>
+                但想念你的每一秒都不算短 🧡
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== Stats ===== -->
+    <section data-section-idx="2">
+        <h2>📊 我们的聊天数据</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number" id="stat-msgs">--</div>
+                <div class="label">消息总数 ✉️</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-days">--</div>
+                <div class="label">聊了几天 📅</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-miss">--</div>
+                <div class="label">说了"想你" 💭</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-call">--</div>
+                <div class="label">通话总时长 🎧</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-late">--</div>
+                <div class="label">最晚聊到 🌙</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="stat-photos">--</div>
+                <div class="label">合照 📸</div>
+            </div>
+        </div>
+        <div class="empty-hint" id="stats-hint" style="display:none;">
+            <div class="icon">📱</div>
+            导出微信聊天记录发给我<br>
+            我帮你把数据填满 💜
+        </div>
+    </section>
+
+    <!-- ===== Timeline ===== -->
+    <section data-section-idx="3">
+        <h2>📜 聊天时间轴</h2>
+        <div class="timeline-container" id="timeline">
+            <div class="empty-hint">
+                <div class="icon">💬</div>
+                导出微信聊天记录给我<br>
+                我帮你把每一句话都摆在这里 ❤️
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Weather ===== -->
+    <section data-section-idx="4">
+        <h2>🌤️ 双城天气</h2>
+        <p style="text-align:center; color:#6d28d9; margin-bottom:1.5rem; font-size:0.9rem;">
+            你在上海下雨了吗？我在南京天晴<br>
+            虽然不在同一片天空下，但看着同一个太阳 🌞
+        </p>
+        <div class="weather-dual">
+            <div class="weather-city">
+                <div class="city-name">📍 上海 · 华政</div>
+                <div class="emoji-big" id="sh-emoji">🌤️</div>
+                <div class="temp" id="sh-temp">--°C</div>
+                <div class="desc" id="sh-desc">加载中...</div>
+            </div>
+            <div class="weather-city">
+                <div class="city-name">📍 南京 · 南信大</div>
+                <div class="emoji-big" id="nj-emoji">🌤️</div>
+                <div class="temp" id="nj-temp">--°C</div>
+                <div class="desc" id="nj-desc">加载中...</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Gallery ===== -->
+    <section data-section-idx="5">
+        <h2>📸 我们的相册</h2>
+        <div class="gallery-grid" id="gallery">
+            <div class="gallery-placeholder" onclick="document.getElementById('photo-input').click()">
+                <div class="big-icon">📷</div>
+                <span>上传合照</span>
+            </div>
+            <div class="gallery-placeholder" onclick="document.getElementById('photo-input').click()">
+                <div class="big-icon">➕</div>
+            </div>
+            <div class="gallery-placeholder" onclick="document.getElementById('photo-input').click()">
+                <div class="big-icon">➕</div>
+            </div>
+            <div class="gallery-placeholder" onclick="document.getElementById('photo-input').click()">
+                <div class="big-icon">➕</div>
+            </div>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotos(event)">
+        <div class="empty-hint" style="margin-top:1rem;">
+            上传你们的合照，把美好瞬间都留下来 💕
+        </div>
+    </section>
+
+    <!-- ===== Message Board ===== -->
+    <section data-section-idx="6">
+        <h2>✉️ 给对方留言</h2>
+        <div class="message-board">
+            <textarea placeholder="写一句想对贝贝说的话……💌" id="msg-input"></textarea>
+            <br>
+            <button onclick="postMessage()">💌 留 言</button>
+            <div id="messages" style="margin-top: 2rem; text-align: left;"></div>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p>上海 <span class="heart">❤</span> 南京 · 距离从来不是问题</p>
+        <p style="margin-top: 0.5rem; font-size: 0.8rem;">博译 & 贝贝 · 沪宁线双城记</p>
+    </footer>
+
+    <script>
+        // ===== Stars Background =====
+        const canvas = document.getElementById('stars-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((canvas.width * canvas.height) / 4000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 1.5 + 0.3,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.02 + 0.005
+                });
+            }
+        }
+        initStars();
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(s => {
+                s.alpha += s.speed;
+                if (s.alpha > 1 || s.alpha < 0.2) s.speed = -s.speed;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(192, 132, 252, ${s.alpha * 0.6})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        // ===== Floating Hearts =====
+        const heartsContainer = document.getElementById('hearts');
+        function createHeart() {
+            const el = document.createElement('div');
+            el.className = 'heart-particle';
+            el.textContent = ['♥', '♡', '❤'][Math.floor(Math.random() * 3)];
+            el.style.left = Math.random() * 100 + '%';
+            el.style.fontSize = (Math.random() * 12 + 10) + 'px';
+            el.style.animationDuration = (Math.random() * 12 + 10) + 's';
+            el.style.animationDelay = '0s';
+            heartsContainer.appendChild(el);
+            setTimeout(() => el.remove(), 22000);
+        }
+        setInterval(createHeart, 3000);
+        for (let i = 0; i < 5; i++) setTimeout(createHeart, i * 1000);
+
+        // ===== Countdown =====
+        const ANNIVERSARY = '2025-06-17';
+        function updateCountdown() {
+            const start = new Date(ANNIVERSARY);
+            const now = new Date();
+            const diff = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)));
+            document.getElementById('days-together').textContent = diff;
+            document.getElementById('days-text').textContent = diff;
+        }
+        updateCountdown();
+        setInterval(updateCountdown, 60000);
+
+        // ===== Weather (via wttr.in free API) =====
+        async function loadWeather() {
+            try {
+                const resp = await fetch('https://wttr.in/Shanghai?format=j1');
+                const data = await resp.json();
+                const sh = data.current_condition[0];
+                const code = parseInt(sh.weatherCode);
+                document.getElementById('sh-emoji').textContent = weatherEmoji(code);
+                document.getElementById('sh-temp').textContent = sh.temp_C + '°C';
+                document.getElementById('sh-desc').textContent = sh.weatherDesc[0].value;
+            } catch (e) {
+                document.getElementById('sh-desc').textContent = '加载失败';
+            }
+            try {
+                const resp = await fetch('https://wttr.in/Nanjing?format=j1');
+                const data = await resp.json();
+                const nj = data.current_condition[0];
+                const code = parseInt(nj.weatherCode);
+                document.getElementById('nj-emoji').textContent = weatherEmoji(code);
+                document.getElementById('nj-temp').textContent = nj.temp_C + '°C';
+                document.getElementById('nj-desc').textContent = nj.weatherDesc[0].value;
+            } catch (e) {
+                document.getElementById('nj-desc').textContent = '加载失败';
+            }
+        }
+        function weatherEmoji(code) {
+            if (code >= 200 && code < 300) return '⛈️';
+            if (code >= 300 && code < 400) return '🌦️';
+            if (code >= 500 && code < 600) return '🌧️';
+            if (code >= 600 && code < 700) return '🌨️';
+            if (code >= 700 && code < 800) return '🌫️';
+            if (code === 800) return '☀️';
+            if (code === 801) return '🌤️';
+            if (code === 802) return '⛅';
+            if (code >= 803) return '☁️';
+            return '🌤️';
+        }
+        loadWeather();
+
+        // ===== Gallery photo upload =====
+        function handlePhotos(event) {
+            const files = event.target.files;
+            const gallery = document.getElementById('gallery');
+            const placeholders = gallery.querySelectorAll('.gallery-placeholder');
+            let insertIdx = 0;
+
+            // Find the last real image position
+            for (let i = 0; i < gallery.children.length; i++) {
+                if (gallery.children[i].classList.contains('gallery-item')) {
+                    insertIdx = i + 1;
+                }
+            }
+
+            Array.from(files).forEach((file, fi) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    div.innerHTML = `<img src="${e.target.result}" alt="合照 ${fi + 1}">`;
+                    gallery.insertBefore(div, gallery.children[insertIdx + fi] || null);
+
+                    // If we've added images, replace one placeholder sizing
+                    const currentPhotos = gallery.querySelectorAll('.gallery-item');
+                    if (currentPhotos.length >= 4) {
+                        // Remove last placeholder
+                        const allPlaceholders = gallery.querySelectorAll('.gallery-placeholder');
+                        if (allPlaceholders.length > 1) {
+                            allPlaceholders[allPlaceholders.length - 1].remove();
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        // ===== Message Board =====
+        function postMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+            const container = document.getElementById('messages');
+
+            const msg = document.createElement('div');
+            msg.className = 'msg-entry';
+            const time = new Date().toLocaleString('zh-CN', {
+                month: 'numeric', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            msg.innerHTML = `<span class="msg-time">${time}</span> <span class="msg-author">博译 🧸</span><br>${text}`;
+            container.prepend(msg);
+
+            input.value = '';
+            const saved = JSON.parse(localStorage.getItem('hnx_messages') || '[]');
+            saved.unshift({ text, time, author: '博译 🧸' });
+            localStorage.setItem('hnx_messages', JSON.stringify(saved));
+        }
+
+        function loadMessages() {
+            const saved = JSON.parse(localStorage.getItem('hnx_messages') || '[]');
+            const container = document.getElementById('messages');
+            saved.forEach(m => {
+                const msg = document.createElement('div');
+                msg.className = 'msg-entry';
+                msg.innerHTML = `<span class="msg-time">${m.time}</span> <span class="msg-author">${m.author || '博译 🧸'}</span><br>${m.text}`;
+                container.appendChild(msg);
+            });
+        }
+        loadMessages();
+
+        // ===== Shooting stars =====
+        function createShootingStar() {
+            const sx = Math.random() * canvas.width;
+            const sy = Math.random() * canvas.height * 0.4;
+            const len = 80 + Math.random() * 60;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + len, sy + len * 0.3);
+            const gradient = ctx.createLinearGradient(sx, sy, sx + len, sy + len * 0.3);
+            gradient.addColorStop(0, 'rgba(255,255,255,0.7)');
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+        setInterval(createShootingStar, 6000);
+
+        // ===== Nav dots =====
+        const sections = document.querySelectorAll('[data-section-idx]');
+        const dots = document.querySelectorAll('.nav-dot');
+
+        function updateActiveDot() {
+            let current = 0;
+            sections.forEach((sec, i) => {
+                const rect = sec.getBoundingClientRect();
+                if (rect.top <= window.innerHeight / 2) current = i;
+            });
+            dots.forEach((d, i) => {
+                d.classList.toggle('active', i === current);
+            });
+        }
+        window.addEventListener('scroll', updateActiveDot);
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                const idx = parseInt(dot.dataset.section);
+                if (sections[idx]) {
+                    sections[idx].scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // ===== Enter to send message =====
+        document.getElementById('msg-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                postMessage();
+            }
+        });
+
+        console.log('💕 沪宁线 · 博译 & 贝贝');
+        console.log('📅 纪念日: 2025-06-17');
+        console.log('📍 上海 · 华政 ↔ 南京 · 南信大');
+    </script>
+</body>
+</html>
